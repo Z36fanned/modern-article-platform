@@ -26,6 +26,28 @@
 
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto py-8 px-4">
+        <!-- Draft Notice -->
+        <div id="draftNotice" class="hidden bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        There is a saved draft available. 
+                        <button id="loadDraftBtn" class="font-medium underline text-yellow-700 hover:text-yellow-600">
+                            Load Draft
+                        </button>
+                        <button id="discardDraftBtn" class="ml-2 font-medium underline text-yellow-700 hover:text-yellow-600">
+                            Discard Draft
+                        </button>
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Article Form -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 class="text-2xl font-bold mb-4">Create New Article</h2>
@@ -52,7 +74,7 @@
                         <button class="bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 focus:outline-none focus:shadow-outline" 
                                 type="button" id="previewBtn">Preview</button>
                         <button class="bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 focus:outline-none focus:shadow-outline" 
-                                type="button">Save Draft</button>
+                                type="button" id="saveDraftBtn">Save Draft</button>
                     </div>
                 </div>
             </form>
@@ -82,6 +104,7 @@
     </footer>
 
     <script>
+        // Initialize TinyMCE
         tinymce.init({
             selector: '#content',
             height: 400,
@@ -91,9 +114,67 @@
                 'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                 'insertdatetime', 'table', 'help', 'wordcount'
             ],
-            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | bullist numlist | removeformat | help'
+            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | bullist numlist | removeformat | help',
+            setup: function(editor) {
+                editor.on('init', function() {
+                    checkForDraft();
+                });
+            }
         });
 
+        // Save draft functionality
+        function saveDraft() {
+            const title = document.getElementById('title').value;
+            const content = tinymce.get('content').getContent();
+            const draft = {
+                title,
+                content,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('articleDraft', JSON.stringify(draft));
+            showSaveNotification();
+        }
+
+        // Load draft functionality
+        function loadDraft() {
+            const draft = JSON.parse(localStorage.getItem('articleDraft'));
+            if (draft) {
+                document.getElementById('title').value = draft.title;
+                tinymce.get('content').setContent(draft.content);
+                document.getElementById('draftNotice').classList.add('hidden');
+            }
+        }
+
+        // Check for existing draft
+        function checkForDraft() {
+            const draft = localStorage.getItem('articleDraft');
+            if (draft) {
+                document.getElementById('draftNotice').classList.remove('hidden');
+            }
+        }
+
+        // Discard draft
+        function discardDraft() {
+            if (confirm('Are you sure you want to discard the draft?')) {
+                localStorage.removeItem('articleDraft');
+                document.getElementById('draftNotice').classList.add('hidden');
+                document.getElementById('title').value = '';
+                tinymce.get('content').setContent('');
+            }
+        }
+
+        // Show save notification
+        function showSaveNotification() {
+            const notification = document.createElement('div');
+            notification.classList.add('fixed', 'bottom-4', 'right-4', 'bg-green-500', 'text-white', 'px-4', 'py-2', 'rounded', 'shadow-lg');
+            notification.textContent = 'Draft saved successfully!';
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Preview functionality
         document.getElementById('previewBtn').addEventListener('click', function() {
             const content = tinymce.get('content').getContent();
             const title = document.getElementById('title').value;
@@ -104,6 +185,7 @@
                 content || 'Add some content to see the preview...';
         });
 
+        // Form submit handling
         document.getElementById('articleForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const title = document.getElementById('title').value;
@@ -115,11 +197,18 @@
                     content,
                     timestamp: new Date().toISOString()
                 });
+                // Clear draft after successful submission
+                localStorage.removeItem('articleDraft');
                 alert('Article submitted successfully!');
             } else {
                 alert('Please fill in all fields');
             }
         });
+
+        // Event listeners for draft functionality
+        document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
+        document.getElementById('loadDraftBtn').addEventListener('click', loadDraft);
+        document.getElementById('discardDraftBtn').addEventListener('click', discardDraft);
     </script>
 </body>
 </html>
