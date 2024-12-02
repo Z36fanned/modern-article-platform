@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Article Platform</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Navigation -->
@@ -28,37 +29,43 @@
         <!-- Article Form -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-8">
             <h2 class="text-2xl font-bold mb-4">Create New Article</h2>
-            <form>
+            <form id="articleForm">
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="title">
-                        Title
-                    </label>
-                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="title" type="text" placeholder="Enter article title">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="title">Title</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                           id="title" type="text" placeholder="Enter article title">
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2" for="content">
-                        Content
-                    </label>
-                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-48" id="content" placeholder="Write your article content here..."></textarea>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="content">Content</label>
+                    <textarea id="content"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Preview</label>
+                    <div id="preview" class="border rounded p-4 bg-gray-50 min-h-[100px]">
+                        Your article preview will appear here...
+                    </div>
                 </div>
                 <div class="flex items-center justify-between">
-                    <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:shadow-outline" type="submit">
-                        Publish Article
-                    </button>
-                    <button class="bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 focus:outline-none focus:shadow-outline" type="button">
-                        Save Draft
-                    </button>
+                    <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:shadow-outline" 
+                            type="submit">Publish Article</button>
+                    <div class="space-x-2">
+                        <button class="bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 focus:outline-none focus:shadow-outline" 
+                                type="button" id="previewBtn">Preview</button>
+                        <button class="bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 focus:outline-none focus:shadow-outline" 
+                                type="button">Save Draft</button>
+                    </div>
                 </div>
             </form>
         </div>
 
         <!-- Article List -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Sample Article Card -->
             <article class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="p-6">
                     <h3 class="text-xl font-bold mb-2">Sample Article Title</h3>
-                    <p class="text-gray-600 mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                    <div class="text-gray-600 mb-4">
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                    </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-500">Published: Dec 1, 2024</span>
                         <button class="text-blue-500 hover:text-blue-600">Read More →</button>
@@ -68,7 +75,6 @@
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="bg-white shadow-lg mt-8">
         <div class="max-w-6xl mx-auto px-4 py-6">
             <p class="text-center text-gray-600">© 2024 ArticlePro. All rights reserved.</p>
@@ -76,15 +82,39 @@
     </footer>
 
     <script>
-        // Basic form handling
-        document.querySelector('form').addEventListener('submit', function(e) {
+        tinymce.init({
+            selector: '#content',
+            height: 400,
+            menubar: true,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | bullist numlist | removeformat | help'
+        });
+
+        document.getElementById('previewBtn').addEventListener('click', function() {
+            const content = tinymce.get('content').getContent();
+            const title = document.getElementById('title').value;
+            const previewDiv = document.getElementById('preview');
+            
+            previewDiv.innerHTML = title ? 
+                `<h1 class="text-2xl font-bold mb-4">${title}</h1>${content}` :
+                content || 'Add some content to see the preview...';
+        });
+
+        document.getElementById('articleForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
+            const content = tinymce.get('content').getContent();
             
             if (title && content) {
-                console.log('Article submitted:', { title, content });
-                // Here you would typically send this to a backend
+                console.log('Article submitted:', { 
+                    title, 
+                    content,
+                    timestamp: new Date().toISOString()
+                });
                 alert('Article submitted successfully!');
             } else {
                 alert('Please fill in all fields');
